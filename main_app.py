@@ -31,7 +31,7 @@ def index():
 
 @app.route('/success')
 def success():
-    return
+    return HTTPResponse(status=200, body="Successful page")
 
 
 @app.route('/fail')
@@ -39,4 +39,15 @@ def fail():
     raise RuntimeError("There is an error!")
 
 
-app.run(host='localhost', port=8080)
+if os.environ.get("APP_LOCATION") == "heroku":
+    sentry_sdk.init(dsn=os.environ['SENTRY_DSN'],
+                    integrations=[BottleIntegration()]
+                    )
+    app.run(
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),
+        server='gunicorn',
+        workers=3,
+    )
+elif __name__ == "__main__":
+    app.run(host="localhost", port=8080, debug=True)
